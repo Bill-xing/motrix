@@ -1573,13 +1573,39 @@ class AnymalCRoughEnv(AnymalCEnv):
         )
         robot_init_pos = np.stack([robot_init_x, robot_init_y], axis=1)  # [num_envs, 2]
 
-        # 生成目标位置：相对于机器人初始位置的偏移
-        target_offset = np.random.uniform(
-            low=cfg.commands.pose_command_range[:2],
-            high=cfg.commands.pose_command_range[3:5],
-            size=(num_envs, 2)
-        )
-        target_positions = robot_init_pos + target_offset  # 世界坐标系中的目标位置
+        # 获取机器人初始位置的地形高度
+        robot_terrain_heights = self._get_terrain_height(robot_init_x, robot_init_y)
+
+        # 生成目标位置，并检查高度差是否可接受
+        max_height_diff = getattr(cfg.commands, 'max_height_diff', 1.0)
+        max_resample_attempts = 10
+
+        target_positions = np.zeros((num_envs, 2), dtype=np.float32)
+        for env_idx in range(num_envs):
+            for attempt in range(max_resample_attempts):
+                # 生成目标偏移
+                target_offset = np.random.uniform(
+                    low=cfg.commands.pose_command_range[:2],
+                    high=cfg.commands.pose_command_range[3:5],
+                )
+                target_pos = robot_init_pos[env_idx] + target_offset
+
+                # 检查目标位置的地形高度
+                target_height = self._get_terrain_height(
+                    np.array([target_pos[0]]),
+                    np.array([target_pos[1]])
+                )[0]
+
+                # 计算高度差
+                height_diff = abs(target_height - robot_terrain_heights[env_idx])
+
+                # 如果高度差可接受，使用此目标
+                if height_diff <= max_height_diff:
+                    target_positions[env_idx] = target_pos
+                    break
+            else:
+                # 超过最大尝试次数，使用最后一个目标（可能不理想但避免死循环）
+                target_positions[env_idx] = target_pos
 
         # 生成目标朝向（绝对朝向，在水平方向随机）
         target_headings = np.random.uniform(
