@@ -1436,6 +1436,37 @@ class AnymalCRoughEnv(AnymalCEnv):
 
         return world_z
 
+    def _get_terrain_slope(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """计算指定位置的地形坡度
+
+        通过采样周围点的高度来估算坡度。
+
+        参数:
+            x: [N] 世界坐标 X
+            y: [N] 世界坐标 Y
+
+        返回:
+            slopes: [N] 坡度（弧度），0表示平坦，π/2表示垂直
+        """
+        # 采样间距（米）
+        delta = 0.1
+
+        # 采样周围4个点
+        h_center = self._get_terrain_height(x, y)
+        h_px = self._get_terrain_height(x + delta, y)
+        h_mx = self._get_terrain_height(x - delta, y)
+        h_py = self._get_terrain_height(x, y + delta)
+        h_my = self._get_terrain_height(x, y - delta)
+
+        # 计算 X 和 Y 方向的梯度
+        grad_x = (h_px - h_mx) / (2 * delta)
+        grad_y = (h_py - h_my) / (2 * delta)
+
+        # 坡度 = arctan(sqrt(grad_x^2 + grad_y^2))
+        slope = np.arctan(np.sqrt(grad_x**2 + grad_y**2))
+
+        return slope
+
     def _border_check(self, data, info):
         """检查机器人是否到达地形边界"""
         border_size = self._cfg.terrain_config.border_size  # 从配置读取地形边界半径

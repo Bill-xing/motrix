@@ -131,6 +131,10 @@ class Commands:
     # 超过此高度差的目标点会被重新采样
     max_height_diff: float = 1.0
 
+    # 机器人生成位置的最大允许坡度（弧度）
+    # 约15度，超过此坡度的位置会被重新采样
+    max_spawn_slope: float = 0.26
+
 
 @dataclass
 class Normalization:
