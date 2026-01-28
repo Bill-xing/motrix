@@ -1,7 +1,9 @@
 <mujoco model="anymal_c">
   <compiler angle="radian" meshdir="assets" texturedir="assets" autolimits="true"/>
 
-  <option cone="elliptic" impratio="100"/>
+  <option timestep="0.005" cone="elliptic" impratio="100" iterations="60">
+    <flag eulerdamp="disable"/>
+  </option>
 
   <default>
     <material specular="0" shininess="0.25"/>
@@ -17,7 +19,7 @@
       <default class="collision">
         <geom group="3" type="cylinder"/>
         <default class="foot">
-          <geom type="sphere" size="0.03" pos="0 0 0.02325" priority="1" solimp="0.015 1 0.03" condim="6"
+          <geom type="sphere" size="0.03" pos="0 0 0.02325" priority="10" solimp="0.9 0.99 0.001" condim="3"
             friction="0.8 0.02 0.01"/>
         </default>
       </default>

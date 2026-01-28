@@ -14,6 +14,7 @@
   </visual>
 
   <asset>
+    <!-- hfield size: x半尺寸, y半尺寸, 高度缩放, 基础厚度 -->
     <hfield name="hfield" file="assets/heightmap.png" size="20 20 2.5 0.1"/>
   </asset>
 
@@ -21,9 +22,9 @@
     <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
     <!-- 平面地板作为备份 (在地形下方) -->
     <geom name="floor" pos="0 0 -3" size="0 0 0.01" type="plane" material="motphys-ground"
-          contype="1" conaffinity="1" priority="1" friction="0.8" condim="3"/>
-    <!-- 高度场地形 -->
+          contype="1" conaffinity="0" priority="1" friction="0.6" condim="3"/>
+    <!-- 高度场地形 - 使用与 go1 相同的碰撞配置 -->
     <geom name="ground" pos="0 0 -1" type="hfield" hfield="hfield" material="motphys-ground"
-          contype="1" conaffinity="1" priority="1" friction="0.8" condim="3"/>
+          contype="1" conaffinity="0" priority="1" friction="0.6"/>
   </worldbody>
 </mujoco>
