@@ -1607,12 +1607,16 @@ class AnymalCRoughEnv(AnymalCEnv):
         # 获取机器人初始位置的地形高度
         robot_terrain_heights = self._get_terrain_height(robot_init_x, robot_init_y)
 
-        # 生成目标位置，并检查高度差是否可接受
-        max_height_diff = getattr(cfg.commands, 'max_height_diff', 1.0)
-        max_resample_attempts = 10
+        # 生成目标位置，检查高度差和坡度是否可接受
+        max_height_diff = getattr(cfg.commands, 'max_height_diff', 0.5)
+        max_target_slope = getattr(cfg.commands, 'max_target_slope', 0.2)
+        max_resample_attempts = getattr(cfg.commands, 'max_resample_attempts', 20)
 
         target_positions = np.zeros((num_envs, 2), dtype=np.float32)
         for env_idx in range(num_envs):
+            best_target = None
+            best_score = float('inf')  # 越小越好
+
             for attempt in range(max_resample_attempts):
                 # 生成目标偏移
                 target_offset = np.random.uniform(
@@ -1630,13 +1634,35 @@ class AnymalCRoughEnv(AnymalCEnv):
                 # 计算高度差
                 height_diff = abs(target_height - robot_terrain_heights[env_idx])
 
-                # 如果高度差可接受，使用此目标
-                if height_diff <= max_height_diff:
+                # 检查目标点的坡度
+                target_slope = self._get_terrain_slope(
+                    np.array([target_pos[0]]),
+                    np.array([target_pos[1]])
+                )[0]
+
+                # 综合评分：高度差和坡度都要满足条件
+                height_ok = height_diff <= max_height_diff
+                slope_ok = target_slope <= max_target_slope
+
+                if height_ok and slope_ok:
+                    # 找到合适的目标点
                     target_positions[env_idx] = target_pos
                     break
+                else:
+                    # 记录最佳候选（如果所有尝试都失败，使用最接近条件的）
+                    score = height_diff / max_height_diff + target_slope / max_target_slope
+                    if score < best_score:
+                        best_score = score
+                        best_target = target_pos
             else:
-                # 超过最大尝试次数，使用最后一个目标（可能不理想但避免死循环）
-                target_positions[env_idx] = target_pos
+                # 超过最大尝试次数，使用最佳候选或出生点附近的安全位置
+                if best_target is not None and best_score < 3.0:
+                    # 使用最接近条件的目标点
+                    target_positions[env_idx] = best_target
+                else:
+                    # 使用出生点附近的安全位置（小范围偏移）
+                    safe_offset = np.random.uniform(-0.5, 0.5, size=2)
+                    target_positions[env_idx] = robot_init_pos[env_idx] + safe_offset
 
         # 生成目标朝向（绝对朝向，在水平方向随机）
         target_headings = np.random.uniform(

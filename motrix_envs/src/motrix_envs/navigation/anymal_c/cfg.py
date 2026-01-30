@@ -128,12 +128,19 @@ class Commands:
     pose_command_range = [-3.0, -3.0, -3.14, 3.0, 3.0, 3.14]
 
     # 目标点与机器人之间的最大允许高度差（米）
-    # 超过此高度差的目标点会被重新采样
-    max_height_diff: float = 1.0
+    # 减小到0.5m，避免生成难以到达的目标点
+    max_height_diff: float = 0.5
+
+    # 目标点的最大允许坡度（弧度）
+    # 约11度，避免目标点在陡坡上导致机器狗难以稳定站立
+    max_target_slope: float = 0.2
 
     # 机器人生成位置的最大允许坡度（弧度）
     # 约15度，超过此坡度的位置会被重新采样
     max_spawn_slope: float = 0.26
+
+    # 目标点采样最大尝试次数
+    max_resample_attempts: int = 20
 
 
 @dataclass
