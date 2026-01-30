@@ -197,5 +197,5 @@ class navigation:
         learning_rate_scheduler_kl_threshold: float = 0.02
 
         # 添加熵损失以鼓励探索，防止策略过早收敛
-        # 0.01仍不足以维持std>0.5，增加到0.02
-        entropy_loss_scale: float = 0.02
+        # 从0.02增加到0.03，进一步维持策略的探索度
+        entropy_loss_scale: float = 0.03
